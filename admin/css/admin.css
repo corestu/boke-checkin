@@ -1,0 +1,287 @@
+/**
+ * Bo.ke 签到助手 - 管理界面样式
+ */
+
+.wrap h1 {
+    font-size: 23px;
+    font-weight: 400;
+    margin: 0 0 10px;
+}
+
+/* 状态卡片 */
+.boke-status-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    margin: 20px 0;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.status-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.status-body {
+    padding: 20px;
+}
+
+.status-item {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.status-item:last-child {
+    margin-bottom: 0;
+}
+
+.status-item .label {
+    font-weight: 600;
+    min-width: 150px;
+    color: #23282d;
+}
+
+.status-item .value {
+    color: #50575e;
+}
+
+.status-item .value.status-success {
+    color: #46b450;
+    font-weight: 600;
+}
+
+.status-item .value.status-failed {
+    color: #dc3232;
+    font-weight: 600;
+}
+
+/* 签到结果消息 */
+.checkin-result {
+    margin: 15px 20px;
+    padding: 10px 15px;
+    border-radius: 3px;
+}
+
+.checkin-result.success {
+    background-color: #fff;
+    border-left: 4px solid #46b450;
+    color: #00a32a;
+}
+
+.checkin-result.error {
+    background-color: #fff;
+    border-left: 4px solid #dc3232;
+    color: #d63638;
+}
+
+.checkin-result.loading {
+    background-color: #fff;
+    border-left: 4px solid #0073aa;
+    color: #0073aa;
+}
+
+/* 设置表单 */
+.form-table th {
+    font-weight: 600;
+}
+
+.form-table td input[type="text"],
+.form-table td input[type="email"] {
+    width: 100%;
+    max-width: 400px;
+}
+
+.form-table td textarea {
+    width: 100%;
+    max-width: 600px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.form-table td .description {
+    margin-top: 5px;
+    font-style: italic;
+    color: #666;
+}
+
+.form-table td pre {
+    background-color: #f1f1f1;
+    padding: 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    overflow-x: auto;
+}
+
+/* 帮助部分 */
+.boke-help-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    margin-top: 20px;
+    padding: 20px;
+}
+
+.boke-help-section h2 {
+    margin-top: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.help-content h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 15px 0 10px;
+}
+
+.help-content ol,
+.help-content ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.help-content li {
+    margin-bottom: 5px;
+}
+
+.help-content code {
+    background-color: #f1f1f1;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.help-content a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.help-content a:hover {
+    text-decoration: underline;
+}
+
+/* 按钮样式 */
+#boke-checkin-now {
+    position: relative;
+}
+
+#boke-checkin-now.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+#boke-checkin-now.loading::after {
+    content: "";
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin-left: -8px;
+    border: 2px solid #fff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 管理通知 */
+.notice-warning strong {
+    color: #996800;
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 782px) {
+    .status-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .status-item {
+        flex-direction: column;
+    }
+
+    .status-item .label {
+        min-width: auto;
+        margin-bottom: 5px;
+    }
+}
+
+/* 关于插件部分 */
+.boke-about-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    margin-top: 20px;
+    padding: 20px;
+}
+
+.boke-about-section h2 {
+    margin-top: 0;
+    font-size: 16px;
+    font-weight: 600;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.boke-about-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.boke-about-table th {
+    text-align: left;
+    padding: 8px 12px 8px 0;
+    font-weight: 600;
+    color: #23282d;
+    width: 120px;
+    vertical-align: top;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.boke-about-table td {
+    padding: 8px 0;
+    color: #50575e;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.boke-about-table ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.boke-about-table li {
+    margin-bottom: 5px;
+    line-height: 1.6;
+}
+
+.boke-about-table a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.boke-about-table a:hover {
+    text-decoration: underline;
+}
+
+.boke-about-footer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    color: #666;
+    font-style: italic;
+    text-align: center;
+}

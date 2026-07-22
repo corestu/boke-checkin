@@ -1,0 +1,29 @@
+# 日志文件
+*.log
+/wp-content/uploads/boke-checkin/
+
+# 编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Node.js（如果需要前端构建）
+node_modules/
+npm-debug.log
+
+# 构建产物
+/dist/
+/build/
+
+# 测试文件
+/tests/
+phpunit.xml
+
+# 文档生成
+/docs/
