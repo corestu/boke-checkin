@@ -109,18 +109,21 @@ class Boke_Checkin_Core {
      * @param string $message  错误信息
      */
     private function update_status($success, $message = '') {
-        $settings = $this->get_settings();
-
-        $settings['last_checkin_time']   = current_time('mysql');
-        $settings['last_checkin_status'] = $success ? 'success' : 'failed';
-
-        if ($success) {
-            $settings['consecutive_days'] = intval($settings['consecutive_days']) + 1;
-        } else {
-            $settings['consecutive_days'] = 0;
+        $status = get_option(BOKE_CHECKIN_STATUS_OPTION_KEY, []);
+        if (!is_array($status)) {
+            $status = [];
         }
 
-        update_option(BOKE_CHECKIN_OPTION_KEY, $settings);
+        $status['last_checkin_time']   = current_time('mysql');
+        $status['last_checkin_status'] = $success ? 'success' : 'failed';
+
+        if ($success) {
+            $status['consecutive_days'] = intval($status['consecutive_days'] ?? 0) + 1;
+        } else {
+            $status['consecutive_days'] = 0;
+        }
+
+        update_option(BOKE_CHECKIN_STATUS_OPTION_KEY, $status);
     }
 
     /**
@@ -156,11 +159,17 @@ class Boke_Checkin_Core {
      */
     public function get_last_checkin_info() {
         $settings = $this->get_settings();
+        $status = get_option(BOKE_CHECKIN_STATUS_OPTION_KEY, []);
+
+        // 兼容插件升级前保存在设置选项中的状态数据。
+        if (!is_array($status) || empty($status['last_checkin_status'])) {
+            $status = $settings;
+        }
 
         return [
-            'time'    => $settings['last_checkin_time'] ?: '从未签到',
-            'status'  => $settings['last_checkin_status'] ?: 'unknown',
-            'days'    => $settings['consecutive_days'],
+            'time'    => !empty($status['last_checkin_time']) ? $status['last_checkin_time'] : '从未签到',
+            'status'  => !empty($status['last_checkin_status']) ? $status['last_checkin_status'] : 'unknown',
+            'days'    => $status['consecutive_days'] ?? 0,
         ];
     }
 }
