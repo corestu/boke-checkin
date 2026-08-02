@@ -15,7 +15,7 @@
 
 ### 方法一：上传安装
 
-1. 下载 [最新版本](https://github.com/摸鱼大王/boke-checkin/releases)
+1. 下载 [最新版本](https://github.com/corestu/boke-checkin/releases)
 2. 登录WordPress后台
 3. 进入"插件" → "安装插件"
 4. 点击"上传插件"
@@ -26,7 +26,7 @@
 
 ```bash
 cd /wp-content/plugins/
-git clone https://github.com/摸鱼大王/boke-checkin.git
+git clone https://github.com/corestu/boke-checkin.git
 ```
 
 然后在WordPress后台激活插件。
@@ -152,7 +152,7 @@ GPL v2 或更高版本 - 详见 [LICENSE](https://www.gnu.org/licenses/gpl-2.0.h
 如有问题，请：
 
 1. 查看本文档的故障排除部分
-2. 在 [GitHub Issues](https://github.com/摸鱼大王/boke-checkin/issues) 提交问题
+2. 在 [GitHub Issues](https://github.com/corestu/boke-checkin/issues) 提交问题
 3. 访问 [摸鱼小窝](https://blog.aistu.cn) 联系作者
 
 ---
