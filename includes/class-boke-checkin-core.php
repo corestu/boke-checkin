@@ -68,18 +68,21 @@ class Boke_Checkin_Core {
         }
 
         $status_code = wp_remote_retrieve_response_code($response);
+        $redirect_url = wp_remote_retrieve_header($response, 'location');
 
-        if ($status_code === 302) {
+        // 成功签到会重定向到 /dashboard/，失败则重定向到 /login/
+        if ($status_code === 302 && strpos($redirect_url, '/dashboard/') !== false) {
             $this->update_status(true);
             return [
                 'success' => true,
                 'message' => '签到成功',
             ];
         } else {
-            $this->update_status(false, "HTTP {$status_code}");
+            $error_msg = $status_code === 302 ? 'Cookie已失效' : "HTTP {$status_code}";
+            $this->update_status(false, $error_msg);
             return [
                 'success' => false,
-                'message' => "签到失败 (HTTP {$status_code})",
+                'message' => "签到失败 ({$error_msg})",
             ];
         }
     }

@@ -3,7 +3,7 @@
  * Plugin Name: Bo.ke 签到助手
  * Plugin URI: https://bo.ke
  * Description: 自动化每日签到 bo.ke 博客大联盟，支持WP-Cron定时任务和邮件通知
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: 摸鱼大王
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // 插件常量
-define('BOKE_CHECKIN_VERSION', '1.0.1');
+define('BOKE_CHECKIN_VERSION', '1.0.2');
 define('BOKE_CHECKIN_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('BOKE_CHECKIN_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('BOKE_CHECKIN_OPTION_KEY', 'boke_checkin_settings');
@@ -62,21 +62,19 @@ final class Boke_Checkin_Plugin {
     public function activate() {
         // 设置默认选项
         $defaults = [
-            'boke_session'     => '',
-            'boke_csrf'        => '',
-            'cron_hour'        => 9,
-            'cron_minute'      => 0,
-            'admin_email'      => get_option('admin_email'),
-            'enable_email'     => true,
-            'last_checkin_time'=> '',
-            'last_checkin_status' => '',
-            'consecutive_days' => 0,
+            'boke_session' => '',
+            'boke_csrf'    => '',
+            'cron_hour'    => 9,
+            'cron_minute'  => 0,
+            'admin_email'  => get_option('admin_email'),
+            'enable_email' => 1,
         ];
 
         if (!get_option(BOKE_CHECKIN_OPTION_KEY)) {
             add_option(BOKE_CHECKIN_OPTION_KEY, $defaults);
         }
 
+        // 确保签到状态选项存在
         if (false === get_option(BOKE_CHECKIN_STATUS_OPTION_KEY, false)) {
             add_option(BOKE_CHECKIN_STATUS_OPTION_KEY, [
                 'last_checkin_time'   => '',
@@ -84,6 +82,9 @@ final class Boke_Checkin_Plugin {
                 'consecutive_days'    => 0,
             ]);
         }
+
+        // 清理旧数据结构
+        $this->cleanup_old_data();
 
         // 注册定时任务
         $this->schedule_cron();
@@ -157,6 +158,27 @@ final class Boke_Checkin_Plugin {
      */
     public static function get_version() {
         return BOKE_CHECKIN_VERSION;
+    }
+
+    /**
+     * 清理旧数据结构
+     */
+    private function cleanup_old_data() {
+        $settings = get_option(BOKE_CHECKIN_OPTION_KEY, []);
+        $changed = false;
+
+        // 移除不再需要的字段（保留full_cookie用于显示）
+        $obsolete_keys = ['last_checkin_time', 'last_checkin_status', 'consecutive_days'];
+        foreach ($obsolete_keys as $key) {
+            if (isset($settings[$key])) {
+                unset($settings[$key]);
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            update_option(BOKE_CHECKIN_OPTION_KEY, $settings);
+        }
     }
 }
 

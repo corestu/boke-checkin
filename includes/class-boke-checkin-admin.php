@@ -40,47 +40,22 @@ class Boke_Checkin_Admin {
             'sanitize_callback' => [$this, 'sanitize_settings'],
         ]);
 
-        // Cookie 设置部分 - 支持完整Cookie粘贴
+        // Cookie 设置部分 - 只需粘贴完整Cookie
         add_settings_section(
             'boke_cookie_section',
-            'Cookie 配置（复制浏览器完整Cookie）',
+            'Cookie 配置',
             null,
             $this->plugin_name
         );
 
         add_settings_field(
             'full_cookie',
-            '完整Cookie字符串',
+            '完整Cookie',
             [$this, 'render_full_cookie_field'],
             $this->plugin_name,
             'boke_cookie_section',
             [
-                'id'          => 'full_cookie',
-                'description' => '从浏览器开发者工具复制完整的Cookie值（包含boke_session和boke_csrf）',
-            ]
-        );
-
-        add_settings_field(
-            'boke_session',
-            'Session Cookie（可选）',
-            [$this, 'render_text_field'],
-            $this->plugin_name,
-            'boke_cookie_section',
-            [
-                'id'          => 'boke_session',
-                'description' => '如果上方自动解析失败，可手动填写',
-            ]
-        );
-
-        add_settings_field(
-            'boke_csrf',
-            'CSRF Cookie（可选）',
-            [$this, 'render_text_field'],
-            $this->plugin_name,
-            'boke_cookie_section',
-            [
-                'id'          => 'boke_csrf',
-                'description' => '如果上方自动解析失败，可手动填写',
+                'description' => '从浏览器开发者工具复制完整的Cookie值',
             ]
         );
 
@@ -155,41 +130,45 @@ class Boke_Checkin_Admin {
     public function sanitize_settings($input) {
         $sanitized = [];
 
-        // 处理完整Cookie自动解析
+        // 保存完整Cookie（用于显示）
         $full_cookie = sanitize_text_field($input['full_cookie'] ?? '');
+        $sanitized['full_cookie'] = $full_cookie;
+
+        // 从完整Cookie解析boke_session和boke_csrf
         if (!empty($full_cookie)) {
-            // 自动解析boke_session
             if (preg_match('/boke_session=([^;]+)/', $full_cookie, $matches)) {
                 $sanitized['boke_session'] = $matches[1];
             }
-
-            // 自动解析boke_csrf
             if (preg_match('/boke_csrf=([^;]+)/', $full_cookie, $matches)) {
                 $sanitized['boke_csrf'] = $matches[1];
             }
         }
 
-        // 如果手动填写了，使用手动值（优先级更高）
-        if (!empty($input['boke_session'])) {
-            $sanitized['boke_session'] = sanitize_text_field($input['boke_session']);
+        // 保留原有的session/csrf（如果本次未填写新Cookie）
+        $existing = get_option(BOKE_CHECKIN_OPTION_KEY, []);
+        if (empty($sanitized['boke_session'])) {
+            $sanitized['boke_session'] = $existing['boke_session'] ?? '';
         }
-        if (!empty($input['boke_csrf'])) {
-            $sanitized['boke_csrf'] = sanitize_text_field($input['boke_csrf']);
+        if (empty($sanitized['boke_csrf'])) {
+            $sanitized['boke_csrf'] = $existing['boke_csrf'] ?? '';
         }
 
-        // 保存完整Cookie供显示
-        $sanitized['full_cookie'] = $full_cookie;
-
+        // 其他设置项
         $sanitized['cron_hour']    = intval($input['cron_hour'] ?? 9);
         $sanitized['cron_minute']  = intval($input['cron_minute'] ?? 0);
         $sanitized['admin_email']  = sanitize_email($input['admin_email'] ?? get_option('admin_email'));
         $sanitized['enable_email'] = isset($input['enable_email']) ? 1 : 0;
 
-        // 保留其他字段
-        $existing = get_option(BOKE_CHECKIN_OPTION_KEY, []);
-        $sanitized['last_checkin_time']    = $existing['last_checkin_time'] ?? '';
-        $sanitized['last_checkin_status']  = $existing['last_checkin_status'] ?? '';
-        $sanitized['consecutive_days']     = $existing['consecutive_days'] ?? 0;
+        // 签到状态迁移到独立选项，不再混入设置
+        if (isset($existing['last_checkin_time'])) {
+            unset($existing['last_checkin_time']);
+        }
+        if (isset($existing['last_checkin_status'])) {
+            unset($existing['last_checkin_status']);
+        }
+        if (isset($existing['consecutive_days'])) {
+            unset($existing['consecutive_days']);
+        }
 
         return $sanitized;
     }
@@ -393,7 +372,7 @@ class Boke_Checkin_Admin {
 
         if (empty($settings['boke_session']) || empty($settings['boke_csrf'])) {
             echo '<div class="notice notice-warning"><p>';
-            echo '<strong>Bo.ke 签到助手：</strong>请先配置 Cookie 信息才能开始自动签到。';
+            echo '<strong>Bo.ke 签到助手：</strong>请先粘贴完整的 Cookie 信息才能开始自动签到。';
             echo '</p></div>';
         }
     }
@@ -403,11 +382,11 @@ class Boke_Checkin_Admin {
      */
     public function render_full_cookie_field($args) {
         $settings = get_option(BOKE_CHECKIN_OPTION_KEY, []);
-        $value = $settings[$args['id']] ?? '';
+        $value = $settings['full_cookie'] ?? '';
         ?>
         <textarea
-            id="<?php echo esc_attr($args['id']); ?>"
-            name="<?php echo BOKE_CHECKIN_OPTION_KEY; ?>[<?php echo esc_attr($args['id']); ?>]"
+            id="full_cookie"
+            name="<?php echo BOKE_CHECKIN_OPTION_KEY; ?>[full_cookie]"
             class="large-text"
             rows="4"
             placeholder="boke_session=xxx; boke_csrf=xxx; ..."
@@ -416,35 +395,8 @@ class Boke_Checkin_Admin {
             <?php echo esc_html($args['description']); ?>
         </p>
         <p class="description">
-            <strong>如何获取：</strong>浏览器登录bo.ke → F12 → Network → 刷新页面 → 找到dashboard请求 → Request Headers → cookie → 复制完整值
+            <strong>获取方式：</strong>浏览器登录bo.ke → F12 → Network → 刷新页面 → 找到dashboard请求 → Request Headers → cookie → 复制完整值
         </p>
-        <script>
-        jQuery(document).ready(function($) {
-            $('#<?php echo esc_attr($args['id']); ?>').on('blur', function() {
-                var fullCookie = $(this).val();
-                if (!fullCookie) return;
-
-                // 自动解析boke_session
-                var sessionMatch = fullCookie.match(/boke_session=([^;]+)/);
-                if (sessionMatch) {
-                    $('[name="<?php echo BOKE_CHECKIN_OPTION_KEY; ?>[boke_session]"]').val(sessionMatch[1]);
-                }
-
-                // 自动解析boke_csrf
-                var csrfMatch = fullCookie.match(/boke_csrf=([^;]+)/);
-                if (csrfMatch) {
-                    $('[name="<?php echo BOKE_CHECKIN_OPTION_KEY; ?>[boke_csrf]"]').val(csrfMatch[1]);
-                }
-
-                // 显示提示
-                if (sessionMatch && csrfMatch) {
-                    alert('✅ 已自动解析出 boke_session 和 boke_csrf');
-                } else {
-                    alert('⚠️ 未能自动解析，请检查Cookie格式');
-                }
-            });
-        });
-        </script>
         <?php
     }
 

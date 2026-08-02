@@ -59,12 +59,11 @@
      */
     $('form').on('submit', function(e) {
         var $form = $(this);
-        var bokeSession = $form.find('[name="boke_checkin_settings[boke_session]"]').val();
-        var bokeCsrf = $form.find('[name="boke_checkin_settings[boke_csrf]"]').val();
+        var fullCookie = $form.find('[name="boke_checkin_settings[full_cookie]"]').val();
 
         // 验证必填字段
-        if (!bokeSession || !bokeCsrf) {
-            alert('请填写完整的 Cookie 信息');
+        if (!fullCookie || fullCookie.trim() === '') {
+            alert('请粘贴完整的 Cookie 信息');
             e.preventDefault();
             return false;
         }
@@ -80,20 +79,6 @@
 
         return true;
     });
-
-    /**
-     * Cookie 输入框自动格式化
-     */
-    $('[name="boke_checkin_settings[boke_session]"], [name="boke_checkin_settings[boke_csrf]"]')
-        .on('blur', function() {
-            var $input = $(this);
-            var value = $input.val().trim();
-
-            // 移除可能的前导/尾随空格和分号
-            value = value.replace(/^[\s;]+|[\s;]+$/g, '');
-
-            $input.val(value);
-        });
 
     /**
      * 显示提示信息
