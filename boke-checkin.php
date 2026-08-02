@@ -62,12 +62,14 @@ final class Boke_Checkin_Plugin {
     public function activate() {
         // 设置默认选项
         $defaults = [
-            'boke_session' => '',
-            'boke_csrf'    => '',
-            'cron_hour'    => 9,
-            'cron_minute'  => 0,
-            'admin_email'  => get_option('admin_email'),
-            'enable_email' => 1,
+            'boke_session'        => '',
+            'boke_csrf'           => '',
+            'cron_hour'           => 9,
+            'cron_minute'         => 0,
+            'admin_email'         => get_option('admin_email'),
+            'enable_email'        => 1,
+            'skip_after_7days'    => 0,
+            'skip_next_checkin'   => 0,
         ];
 
         if (!get_option(BOKE_CHECKIN_OPTION_KEY)) {
@@ -77,9 +79,10 @@ final class Boke_Checkin_Plugin {
         // 确保签到状态选项存在
         if (false === get_option(BOKE_CHECKIN_STATUS_OPTION_KEY, false)) {
             add_option(BOKE_CHECKIN_STATUS_OPTION_KEY, [
-                'last_checkin_time'   => '',
-                'last_checkin_status' => '',
-                'consecutive_days'    => 0,
+                'last_checkin_time'    => '',
+                'last_checkin_status'  => '',
+                'last_checkin_message' => '',
+                'consecutive_days'     => 0,
             ]);
         }
 

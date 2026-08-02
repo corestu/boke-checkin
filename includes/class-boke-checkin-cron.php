@@ -19,7 +19,7 @@ class Boke_Checkin_Cron {
     public function run_checkin() {
         $core    = Boke_Checkin_Core::get_instance();
         $mail    = new Boke_Checkin_Mail();
-        $result  = $core->do_checkin();
+        $result  = $core->do_checkin(true);  // 传递 is_cron=true
 
         // 记录日志
         $this->log_checkin($result);
@@ -41,10 +41,17 @@ class Boke_Checkin_Cron {
      * 记录签到日志
      */
     private function log_checkin($result) {
+        $status = $result['success'] ? 'SUCCESS' : 'FAILED';
+
+        // 检查是否是跳过签到
+        if (strpos($result['message'], '跳过签到') === 0) {
+            $status = 'SKIPPED';
+        }
+
         $log_entry = sprintf(
             "[%s] %s - %s\n",
             current_time('mysql'),
-            $result['success'] ? 'SUCCESS' : 'FAILED',
+            $status,
             $result['message']
         );
 

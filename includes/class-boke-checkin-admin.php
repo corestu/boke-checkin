@@ -91,6 +91,38 @@ class Boke_Checkin_Admin {
             ]
         );
 
+        // 高级设置部分
+        add_settings_section(
+            'boke_advanced_section',
+            '高级设置',
+            null,
+            $this->plugin_name
+        );
+
+        add_settings_field(
+            'skip_after_7days',
+            '连续7天休息一天',
+            [$this, 'render_checkbox_field'],
+            $this->plugin_name,
+            'boke_advanced_section',
+            [
+                'id'          => 'skip_after_7days',
+                'description' => '启用后，连续签到7天会自动跳过第8天，形成7天签到+1天休息的循环',
+            ]
+        );
+
+        add_settings_field(
+            'skip_next_checkin',
+            '已经满7天（跳过下次签到）',
+            [$this, 'render_checkbox_field'],
+            $this->plugin_name,
+            'boke_advanced_section',
+            [
+                'id'          => 'skip_next_checkin',
+                'description' => '勾选后下一次自动签到将跳过，用于手动调整签到节奏（跳过后自动取消勾选）',
+            ]
+        );
+
         // 邮件通知设置部分
         add_settings_section(
             'boke_email_section',
@@ -158,6 +190,10 @@ class Boke_Checkin_Admin {
         $sanitized['cron_minute']  = intval($input['cron_minute'] ?? 0);
         $sanitized['admin_email']  = sanitize_email($input['admin_email'] ?? get_option('admin_email'));
         $sanitized['enable_email'] = isset($input['enable_email']) ? 1 : 0;
+
+        // 高级设置
+        $sanitized['skip_after_7days']  = isset($input['skip_after_7days']) ? 1 : 0;
+        $sanitized['skip_next_checkin'] = isset($input['skip_next_checkin']) ? 1 : 0;
 
         // 签到状态迁移到独立选项，不再混入设置
         if (isset($existing['last_checkin_time'])) {
@@ -233,11 +269,15 @@ class Boke_Checkin_Admin {
                             $status_labels = [
                                 'success' => '✅ 成功',
                                 'failed'  => '❌ 失败',
+                                'skipped' => '⏭️ 跳过',
                                 'unknown' => '⚪ 未知',
                             ];
                             echo esc_html($status_labels[$info['status']] ?? '未知');
                             ?>
                         </span>
+                        <?php if (!empty($info['message']) && $info['status'] === 'skipped'): ?>
+                            <span class="description">(<?php echo esc_html($info['message']); ?>)</span>
+                        <?php endif; ?>
                     </div>
                     <div class="status-item">
                         <span class="label">连续签到天数：</span>

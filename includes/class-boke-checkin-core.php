@@ -23,10 +23,12 @@ class Boke_Checkin_Core {
     /**
      * 执行签到
      *
+     * @param bool $is_cron 是否是定时任务调用
      * @return array 签到结果 ['success' => bool, 'message' => string]
      */
-    public function do_checkin() {
+    public function do_checkin($is_cron = false) {
         $settings = $this->get_settings();
+        $status = get_option(BOKE_CHECKIN_STATUS_OPTION_KEY, []);
 
         // 验证配置
         if (empty($settings['boke_session']) || empty($settings['boke_csrf'])) {
@@ -34,6 +36,18 @@ class Boke_Checkin_Core {
                 'success' => false,
                 'message' => '请先配置 Cookie 信息',
             ];
+        }
+
+        // 定时任务时检查是否需要跳过签到
+        if ($is_cron) {
+            $skip_reason = $this->should_skip_checkin($settings, $status);
+            if ($skip_reason) {
+                $this->update_status('skipped', $skip_reason);
+                return [
+                    'success' => true,
+                    'message' => "跳过签到：{$skip_reason}",
+                ];
+            }
         }
 
         // 构建请求
@@ -88,28 +102,55 @@ class Boke_Checkin_Core {
     }
 
     /**
+     * 检查是否应该跳过签到
+     *
+     * @param array $settings 设置
+     * @param array $status 签到状态
+     * @return string|false 跳过原因，不跳过返回false
+     */
+    private function should_skip_checkin($settings, $status) {
+        // 检查手动跳过（勾选"已经满7天"）
+        if (!empty($settings['skip_next_checkin'])) {
+            // 自动取消勾选
+            $settings['skip_next_checkin'] = 0;
+            update_option(BOKE_CHECKIN_OPTION_KEY, $settings);
+            return '手动跳过';
+        }
+
+        // 检查自动跳过（连续7天隔一天）
+        if (!empty($settings['skip_after_7days'])) {
+            $consecutive_days = intval($status['consecutive_days'] ?? 0);
+            // 当连续签到天数是7的倍数（7, 14, 21...）时跳过
+            if ($consecutive_days > 0 && $consecutive_days % 7 === 0) {
+                return "连续签到{$consecutive_days}天，休息一天";
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * 获取设置
      */
     public function get_settings() {
         $settings = get_option(BOKE_CHECKIN_OPTION_KEY, []);
         return wp_parse_args($settings, [
-            'boke_session'         => '',
-            'boke_csrf'            => '',
-            'cron_hour'            => 9,
-            'cron_minute'          => 0,
-            'admin_email'          => get_option('admin_email'),
-            'enable_email'         => true,
-            'last_checkin_time'    => '',
-            'last_checkin_status'  => '',
-            'consecutive_days'     => 0,
+            'boke_session'        => '',
+            'boke_csrf'           => '',
+            'cron_hour'           => 9,
+            'cron_minute'         => 0,
+            'admin_email'         => get_option('admin_email'),
+            'enable_email'        => true,
+            'skip_after_7days'    => 0,
+            'skip_next_checkin'   => 0,
         ]);
     }
 
     /**
      * 更新签到状态
      *
-     * @param bool   $success  是否成功
-     * @param string $message  错误信息
+     * @param bool|string $success 是否成功，或 'skipped' 表示跳过
+     * @param string $message 信息
      */
     private function update_status($success, $message = '') {
         $status = get_option(BOKE_CHECKIN_STATUS_OPTION_KEY, []);
@@ -117,12 +158,19 @@ class Boke_Checkin_Core {
             $status = [];
         }
 
-        $status['last_checkin_time']   = current_time('mysql');
-        $status['last_checkin_status'] = $success ? 'success' : 'failed';
+        $status['last_checkin_time'] = current_time('mysql');
 
-        if ($success) {
+        if ($success === 'skipped') {
+            $status['last_checkin_status'] = 'skipped';
+            $status['last_checkin_message'] = $message;
+            // 跳过时连续天数保持不变
+        } elseif ($success) {
+            $status['last_checkin_status'] = 'success';
+            $status['last_checkin_message'] = '';
             $status['consecutive_days'] = intval($status['consecutive_days'] ?? 0) + 1;
         } else {
+            $status['last_checkin_status'] = 'failed';
+            $status['last_checkin_message'] = $message;
             $status['consecutive_days'] = 0;
         }
 
@@ -173,6 +221,7 @@ class Boke_Checkin_Core {
             'time'    => !empty($status['last_checkin_time']) ? $status['last_checkin_time'] : '从未签到',
             'status'  => !empty($status['last_checkin_status']) ? $status['last_checkin_status'] : 'unknown',
             'days'    => $status['consecutive_days'] ?? 0,
+            'message' => $status['last_checkin_message'] ?? '',
         ];
     }
 }
