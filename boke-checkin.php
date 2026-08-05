@@ -3,7 +3,7 @@
  * Plugin Name: Bo.ke 签到助手
  * Plugin URI: https://bo.ke
  * Description: 自动化每日签到 bo.ke 博客大联盟，支持WP-Cron定时任务和邮件通知
- * Version: 1.0.2
+ * Version: 1.0.4
  * Author: 摸鱼大王
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // 插件常量
-define('BOKE_CHECKIN_VERSION', '1.0.2');
+define('BOKE_CHECKIN_VERSION', '1.0.4');
 define('BOKE_CHECKIN_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('BOKE_CHECKIN_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('BOKE_CHECKIN_OPTION_KEY', 'boke_checkin_settings');
@@ -69,7 +69,6 @@ final class Boke_Checkin_Plugin {
             'admin_email'         => get_option('admin_email'),
             'enable_email'        => 1,
             'skip_after_7days'    => 0,
-            'skip_next_checkin'   => 0,
         ];
 
         if (!get_option(BOKE_CHECKIN_OPTION_KEY)) {

@@ -50,6 +50,9 @@ class Boke_Checkin_Core {
             }
         }
 
+        // 检查上次签到失败的遗留状态：若失败当天未补签，则重置连续天数
+        $this->maybe_reset_for_missed_recovery();
+
         // 构建请求
         $url = 'https://bo.ke/dashboard/checkin/';
         $headers = [
@@ -109,14 +112,6 @@ class Boke_Checkin_Core {
      * @return string|false 跳过原因，不跳过返回false
      */
     private function should_skip_checkin($settings, $status) {
-        // 检查手动跳过（勾选"已经满7天"）
-        if (!empty($settings['skip_next_checkin'])) {
-            // 自动取消勾选
-            $settings['skip_next_checkin'] = 0;
-            update_option(BOKE_CHECKIN_OPTION_KEY, $settings);
-            return '手动跳过';
-        }
-
         // 检查自动跳过（连续7天隔一天）
         if (!empty($settings['skip_after_7days'])) {
             $consecutive_days = intval($status['consecutive_days'] ?? 0);
@@ -142,7 +137,6 @@ class Boke_Checkin_Core {
             'admin_email'         => get_option('admin_email'),
             'enable_email'        => true,
             'skip_after_7days'    => 0,
-            'skip_next_checkin'   => 0,
         ]);
     }
 
@@ -163,7 +157,9 @@ class Boke_Checkin_Core {
         if ($success === 'skipped') {
             $status['last_checkin_status'] = 'skipped';
             $status['last_checkin_message'] = $message;
-            // 跳过时连续天数保持不变
+            // 跳过休息后重置连续天数，下一周期从 1 重新累加，
+            // 否则 consecutive_days 会一直卡在 7 的倍数导致每天都跳过
+            $status['consecutive_days'] = 0;
         } elseif ($success) {
             $status['last_checkin_status'] = 'success';
             $status['last_checkin_message'] = '';
@@ -171,10 +167,38 @@ class Boke_Checkin_Core {
         } else {
             $status['last_checkin_status'] = 'failed';
             $status['last_checkin_message'] = $message;
-            $status['consecutive_days'] = 0;
+            // 不立即重置 consecutive_days，给用户当天"立即签到"补签的机会
+            // 若当天未补签，下次签到时由 maybe_reset_for_missed_recovery 重置
         }
 
         update_option(BOKE_CHECKIN_STATUS_OPTION_KEY, $status);
+    }
+
+    /**
+     * 检查上次签到失败的遗留状态
+     *
+     * 签到失败时不立即重置连续天数，给用户当天"立即签到"补签的机会。
+     * 若上次失败日期不是今天（即当天未补签），则重置连续天数为 0。
+     */
+    private function maybe_reset_for_missed_recovery() {
+        $status = get_option(BOKE_CHECKIN_STATUS_OPTION_KEY, []);
+        if (!is_array($status)) {
+            return;
+        }
+        if (($status['last_checkin_status'] ?? '') !== 'failed') {
+            return;
+        }
+        if (empty($status['last_checkin_time'])) {
+            return;
+        }
+
+        $last_date = substr($status['last_checkin_time'], 0, 10); // 'Y-m-d'
+        $today     = current_time('Y-m-d');
+
+        if ($last_date !== $today) {
+            $status['consecutive_days'] = 0;
+            update_option(BOKE_CHECKIN_STATUS_OPTION_KEY, $status);
+        }
     }
 
     /**

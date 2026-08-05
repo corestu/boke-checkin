@@ -137,16 +137,6 @@ GPL v2 或更高版本 - 详见 [LICENSE](https://www.gnu.org/licenses/gpl-2.0.h
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 开启 Pull Request
 
-## 📊 更新日志
-
-### 1.0.0 (2024-01-22)
-
-- 初始版本发布
-- 支持Cookie自动解析
-- 支持定时签到
-- 支持邮件通知
-- 支持签到日志
-
 ## 📞 支持
 
 如有问题，请：

@@ -112,14 +112,13 @@ class Boke_Checkin_Admin {
         );
 
         add_settings_field(
-            'skip_next_checkin',
-            '已经满7天（跳过下次签到）',
-            [$this, 'render_checkbox_field'],
+            'manual_consecutive_days',
+            '手动校准连续签到天数',
+            [$this, 'render_manual_days_field'],
             $this->plugin_name,
             'boke_advanced_section',
             [
-                'id'          => 'skip_next_checkin',
-                'description' => '勾选后下一次自动签到将跳过，用于手动调整签到节奏（跳过后自动取消勾选）',
+                'description' => '当插件记录的连续签到天数与实际不符时，可在此手动修改。保存设置后立即生效，下一次签到会以此值为基础继续累加。',
             ]
         );
 
@@ -193,7 +192,17 @@ class Boke_Checkin_Admin {
 
         // 高级设置
         $sanitized['skip_after_7days']  = isset($input['skip_after_7days']) ? 1 : 0;
-        $sanitized['skip_next_checkin'] = isset($input['skip_next_checkin']) ? 1 : 0;
+
+        // 手动校准连续签到天数：写入状态选项，不持久化到 settings
+        if (isset($input['manual_consecutive_days']) && $input['manual_consecutive_days'] !== '') {
+            $manual_days = max(0, intval($input['manual_consecutive_days']));
+            $status = get_option(BOKE_CHECKIN_STATUS_OPTION_KEY, []);
+            if (!is_array($status)) {
+                $status = [];
+            }
+            $status['consecutive_days'] = $manual_days;
+            update_option(BOKE_CHECKIN_STATUS_OPTION_KEY, $status);
+        }
 
         // 签到状态迁移到独立选项，不再混入设置
         if (isset($existing['last_checkin_time'])) {
@@ -491,6 +500,22 @@ class Boke_Checkin_Admin {
         );
         if (!empty($args['description'])) {
             printf('<label for="%s">%s</label>', esc_attr($args['id']), esc_html($args['description']));
+        }
+    }
+
+    /**
+     * 渲染手动校准连续签到天数字段
+     */
+    public function render_manual_days_field($args) {
+        $status = get_option(BOKE_CHECKIN_STATUS_OPTION_KEY, []);
+        $days = intval($status['consecutive_days'] ?? 0);
+        printf(
+            '<input type="number" id="manual_consecutive_days" name="%s[manual_consecutive_days]" value="%d" min="0" max="365" class="small-text" /> 天',
+            BOKE_CHECKIN_OPTION_KEY,
+            $days
+        );
+        if (!empty($args['description'])) {
+            printf('<p class="description">%s</p>', esc_html($args['description']));
         }
     }
 
